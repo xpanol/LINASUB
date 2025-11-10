@@ -8,94 +8,107 @@
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
 
 <style>
-  :root{
-    --highlight: #F6B511;
-    --bg-dim: 0.55;
-    --font: "Special Elite", monospace;
-  }
+:root{
+  --highlight: #F6B511;
+  --bg-dim: 0.55;
+  --font: "Special Elite", monospace;
+}
 
-  html,body{
-    height:100%;
-    margin:0;
-  }
+html, body {
+  height: 100%;
+  margin: 0;
+}
 
-  body{
-    font-family: var(--font);
-    background:#000;
-    color:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:40px 20px; /* więcej miejsca u góry i dołu */
-    box-sizing:border-box;
-  }
+body {
+  font-family: var(--font);
+  background:#000;
+  color:#fff;
+  display:flex;
+  align-items:flex-start;  /* od góry */
+  justify-content:center;
+  padding:20px 10px;
+  box-sizing:border-box;
+  min-height:100vh;
+}
 
-  @media (max-width:600px){
-    body {
-      padding:60px 16px; /* większy odstęp na małych ekranach */
-    }
-  }
+.background{
+  position:fixed;
+  inset:0;
+  background-image:url('BACKGROUND.jpg');
+  background-size:cover;
+  background-position:center;
+  filter:brightness(calc(1 - var(--bg-dim)));
+  z-index:-1;
+}
 
-  .background{
-    position:fixed;
-    inset:0;
-    background-image:url('BACKGROUND.jpg');
-    background-size:cover;
-    background-position:center;
-    filter:brightness(calc(1 - var(--bg-dim)));
-    z-index:-1;
-  }
+.app {
+  width:100%;
+  max-width:1000px;
+  text-align:center;
+}
 
+.line-box {
+  margin:0 auto 18px;
+  padding:18px;
+  background:rgba(0,0,0,0.25);
+  border-radius:10px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.5);
+  min-height:120px;
+}
+
+.line {
+  font-size:24px;
+  line-height:1.45;
+  margin:12px 0;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+}
+
+.word { transition: color 0.12s ease; }
+.word.highlight { color: var(--highlight); font-weight:700; }
+
+.controls {
+  display:flex;
+  gap:12px;
+  justify-content:center;
+  align-items:center;
+  margin-top:6px;
+}
+
+.btn {
+  background:var(--highlight);
+  color:#000;
+  border:0;
+  padding:10px 16px;
+  border-radius:8px;
+  font-family:var(--font);
+  font-size:16px;
+  cursor:pointer;
+}
+
+.btn:active { transform:translateY(1px); }
+
+@media (max-width:600px){
   .app {
     width:100%;
-    max-width:1000px;
-    text-align:center;
+    max-width:100%;
   }
-
   .line-box {
-    min-height:120px;
-    margin:0 auto 18px;
-    padding:18px;
-    background:rgba(0,0,0,0.25);
-    border-radius:10px;
-    box-shadow:0 6px 24px rgba(0,0,0,0.5);
+    padding:8px 10px;
+    min-height:auto;
   }
-
   .line {
-    font-size:24px;
-    line-height:1.45;
-    margin:12px 0;
-    text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    font-size:18px;
+    line-height:1.3;
   }
-
-  .word { transition: color 0.12s ease; }
-  .word.highlight { color: var(--highlight); font-weight:700; }
-
   .controls {
-    display:flex;
-    gap:12px;
-    justify-content:center;
-    align-items:center;
-    margin-top:6px;
+    flex-direction:column;
+    gap:8px;
   }
-
   .btn {
-    background:var(--highlight);
-    color:#000;
-    border:0;
-    padding:10px 16px;
-    border-radius:8px;
-    font-family:var(--font);
-    font-size:16px;
-    cursor:pointer;
+    padding:8px 12px;
+    font-size:14px;
   }
-
-  .btn:active { transform:translateY(1px); }
-
-  @media (max-width:600px){
-    .line { font-size:20px; }
-    .line-box { padding:14px; min-height:110px; }
-  }
+}
 </style>
 </head>
 <body>
