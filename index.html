@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Karaoke — Linia po linii</title>
+<title>Lina Subtitulada</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
 
@@ -23,14 +23,17 @@
     font-family: var(--font);
     background:#000;
     color:#fff;
-    padding:40px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:20px;
     box-sizing:border-box;
-    display:block;
   }
 
   @media (max-width:600px){
-    body {
-      padding:60px 16px;
+    body{
+      padding:20px;
     }
   }
 
@@ -47,8 +50,11 @@
   .app {
     width:100%;
     max-width:1000px;
-    margin:0 auto;
+    max-height:calc(100vh - 40px);
+    overflow:auto;
     text-align:center;
+    padding:10px;
+    box-sizing:border-box;
   }
 
   .line-box {
@@ -100,6 +106,7 @@
   }
 </style>
 </head>
+
 <body>
   <div class="background" aria-hidden="true"></div>
 
@@ -152,202 +159,3 @@ function normalizeData(data){
       const words = (item.words || []).map(w => ({
         text: w.text,
         start: Number(w.start),
-        end: Number(w.end)
-      }));
-      return {
-        text: item.line !== undefined ? item.line : words.map(w=>w.text).join(' '),
-        start: Number(item.start || (words.length?words[0].start:0)),
-        end: Number(item.end || (words.length?words[words.length-1].end:0)),
-        words
-      };
-    });
-  }
-
-  const flat = data.map(w => ({
-    text:w.text,
-    start:Number(w.start),
-    end:Number(w.end)
-  }));
-
-  const result = [];
-  let cur = [];
-
-  for(let i=0;i<flat.length;i++){
-    const w = flat[i];
-    cur.push(w);
-    const lastChar = w.text.trim().slice(-1);
-
-    if(/[.!?…]/.test(lastChar) || cur.length >= 8){
-      result.push({
-        text:cur.map(x=>x.text).join(' '),
-        start:cur[0].start,
-        end:cur[cur.length-1].end,
-        words:cur.slice()
-      });
-      cur = [];
-    }
-  }
-  if(cur.length){
-    result.push({
-      text:cur.map(x=>x.text).join(' '),
-      start:cur[0].start,
-      end:cur[cur.length-1].end,
-      words:cur.slice()
-    });
-  }
-  return result;
-}
-
-function buildBlocks(){
-  blocks = [];
-  for(let i=0;i<lines.length;i+=blockSize){
-    const block = [];
-    for(let j=0;j<blockSize && (i+j)<lines.length;j++){
-      block.push(i+j);
-    }
-    blocks.push(block);
-  }
-}
-
-function renderBlock(bi){
-  lineBox.innerHTML = '';
-  if(bi < 0 || bi >= blocks.length) return;
-  const lineIndices = blocks[bi];
-  lineIndices.forEach(li=>{
-    const L = lines[li];
-    const div = document.createElement('div');
-    div.className = 'line';
-    L.words.forEach((w, wi)=>{
-      const span = document.createElement('span');
-      span.className = 'word';
-      span.id = `w_${li}_${wi}`;
-      span.textContent = w.text + (wi < L.words.length-1?' ':'');
-      div.appendChild(span);
-    });
-    lineBox.appendChild(div);
-  });
-}
-
-function highlightLoop(){
-  const t = audio.currentTime;
-  const lineIndices = blocks[currentBlockIndex];
-  let done = true;
-
-  for(const li of lineIndices){
-    const L = lines[li];
-    for(let wi=0; wi<L.words.length; wi++){
-      const w = L.words[wi];
-      const span = document.getElementById(`w_${li}_${wi}`);
-      if(!span) continue;
-
-      if(t >= w.start && t <= w.end){
-        span.classList.add('highlight');
-        done = false;
-      } else {
-        span.classList.remove('highlight');
-        if(t < w.end) done = false;
-      }
-    }
-  }
-
-  if(!audio.paused && done){
-    const lastLine = lineIndices[lineIndices.length-1];
-    const lastWord = lines[lastLine].words.at(-1);
-    if(t > lastWord.end + 0.15){
-      if(currentBlockIndex < blocks.length-1){
-        currentBlockIndex++;
-        renderBlock(currentBlockIndex);
-      } else {
-        audio.pause();
-        playBtn.textContent = 'Play';
-      }
-    }
-  }
-
-  rafId = requestAnimationFrame(highlightLoop);
-}
-
-playBtn.addEventListener('click', ()=>{
-  if(audio.paused){
-    audio.play();
-    playBtn.textContent = 'Pause';
-    if(!rafId) rafId = requestAnimationFrame(highlightLoop);
-  } else {
-    audio.pause();
-    playBtn.textContent = 'Play';
-    if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
-  }
-});
-
-restartBtn.addEventListener('click', ()=>{
-  audio.currentTime = 0;
-  currentBlockIndex = 0;
-  renderBlock(0);
-  audio.play();
-  playBtn.textContent = 'Pause';
-  if(!rafId) rafId = requestAnimationFrame(highlightLoop);
-});
-
-backBtn.addEventListener('click', ()=>{
-  if(currentBlockIndex > 0){
-    currentBlockIndex--;
-    const li = blocks[currentBlockIndex][0];
-    audio.currentTime = lines[li].start;
-    renderBlock(currentBlockIndex);
-  } else {
-    audio.currentTime = 0;
-    renderBlock(0);
-  }
-});
-
-audio.addEventListener('seeked', ()=>{
-  const t = audio.currentTime;
-  let found = false;
-
-  for(let b=0;b<blocks.length;b++){
-    for(const li of blocks[b]){
-      const L = lines[li];
-      if(t >= L.start && t <= L.end + 0.2){
-        currentBlockIndex = b;
-        found = true;
-        break;
-      }
-    }
-    if(found) break;
-  }
-
-  if(!found){
-    for(let b=0;b<blocks.length;b++){
-      const s = lines[blocks[b][0]].start;
-      if(s > t){
-        currentBlockIndex = Math.max(0,b-1);
-        break;
-      }
-    }
-  }
-
-  renderBlock(currentBlockIndex);
-});
-
-audio.addEventListener('ended', ()=>{
-  playBtn.textContent = 'Play';
-  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
-});
-
-(async function init(){
-  try{
-    rawData = await loadJsonTry(JSON_FILES);
-    lines = normalizeData(rawData);
-    buildBlocks();
-    renderBlock(0);
-    audio.play();
-    rafId = requestAnimationFrame(highlightLoop);
-  } catch(e){
-    lineBox.innerHTML = '<div style="color:#ffb3b3">Błąd w JSON</div>';
-    console.error(e);
-  }
-})();
-</script>
-
-</body>
-</html>
