@@ -60,7 +60,11 @@
     line-height:1.45;
     margin:12px 0;
     text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    opacity:0;
+    transition: opacity 0.3s ease;
   }
+
+  .line.visible { opacity:1; }
 
   .word { transition: color 0.12s ease; }
 
@@ -106,7 +110,7 @@
     </div>
   </div>
 
-  <audio id="audio" src="LINA_XPANOL.mp3"></audio>
+  <audio id="audio" src="LINA_XPANOL.mp3" autoplay muted></audio>
 
 <script>
 const JSON_FILES = ['LINA_XPANOL.json','timestamps.json'];
@@ -207,10 +211,11 @@ function renderBlock(bi){
   lineBox.innerHTML = '';
   if(bi < 0 || bi >= blocks.length) return;
   const lineIndices = blocks[bi];
-  lineIndices.forEach(li=>{
+  lineIndices.forEach((li, idx)=>{
     const L = lines[li];
     const div = document.createElement('div');
-    div.className = 'line';
+    div.className = 'line visible';
+    if(idx >= blockSize) div.classList.remove('visible'); 
     L.words.forEach((w, wi)=>{
       const span = document.createElement('span');
       span.className = 'word';
@@ -285,16 +290,13 @@ restartBtn.addEventListener('click', ()=>{
 backBtn.addEventListener('click', ()=>{
   if(currentBlockIndex > 0){
     currentBlockIndex--;
+    const li = blocks[currentBlockIndex][0];
+    audio.currentTime = lines[li].start;
+    renderBlock(currentBlockIndex);
+  } else {
+    audio.currentTime = 0;
+    renderBlock(0);
   }
-  const firstLineIndex = blocks[currentBlockIndex][0];
-  const firstLine = lines[firstLineIndex];
-  audio.currentTime = firstLine.start;
-  renderBlock(currentBlockIndex);
-  if(audio.paused){
-    audio.play();
-    playBtn.textContent = 'Pause';
-  }
-  if(!rafId) rafId = requestAnimationFrame(highlightLoop);
 });
 
 audio.addEventListener('seeked', ()=>{
@@ -337,8 +339,7 @@ audio.addEventListener('ended', ()=>{
     lines = normalizeData(rawData);
     buildBlocks();
     renderBlock(0);
-    audio.play(); // autostart
-    playBtn.textContent = 'Pause';
+    audio.play().catch(()=>{ /* autoplay blocked, ale mamy muted */ });
     if(!rafId) rafId = requestAnimationFrame(highlightLoop);
   } catch(e){
     lineBox.innerHTML = '<div style="color:#ffb3b3">Błąd w JSON</div>';
