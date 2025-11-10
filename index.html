@@ -33,7 +33,7 @@
   .background{
     position:fixed;
     inset:0;
-    background-image:url('BACKGROUND.JPG');
+    background-image:url('BACKGROUND.jpg');
     background-size:cover;
     background-position:center;
     filter:brightness(calc(1 - var(--bg-dim)));
@@ -63,7 +63,6 @@
   }
 
   .word { transition: color 0.12s ease; }
-
   .word.highlight { color: var(--highlight); font-weight:700; }
 
   .controls {
@@ -106,10 +105,11 @@
     </div>
   </div>
 
-  <audio id="audio" src="LINA_XPANOL.mp3"></audio>
+  <audio id="audio" src="LINA_XPANOL.mp3" autoplay></audio>
 
 <script>
-const JSON_FILES = ['LINA_XPANOL.json','timestamps.json'];
+const JSON_FILES = ['LINA_XPANOL.json'];
+
 const audio = document.getElementById('audio');
 const lineBox = document.getElementById('lineBox');
 const playBtn = document.getElementById('playBtn');
@@ -122,7 +122,6 @@ let lines = [];
 let blocks = [];
 let currentBlockIndex = 0;
 let rafId = null;
-const introOffset = 1.5; // czas trwania intro muzycznego w sekundach
 
 async function loadJsonTry(files){
   for(const f of files){
@@ -139,6 +138,7 @@ async function loadJsonTry(files){
 function normalizeData(data){
   if(!Array.isArray(data)) throw new Error('JSON musi być tablicą');
   if(data.length === 0) return [];
+
   if(data[0].line || data[0].words){
     return data.map(item => {
       const words = (item.words || []).map(w => ({
@@ -154,17 +154,21 @@ function normalizeData(data){
       };
     });
   }
+
   const flat = data.map(w => ({
     text:w.text,
     start:Number(w.start),
     end:Number(w.end)
   }));
+
   const result = [];
   let cur = [];
+
   for(let i=0;i<flat.length;i++){
     const w = flat[i];
     cur.push(w);
     const lastChar = w.text.trim().slice(-1);
+
     if(/[.!?…]/.test(lastChar) || cur.length >= 8){
       result.push({
         text:cur.map(x=>x.text).join(' '),
@@ -203,10 +207,10 @@ function renderBlock(bi){
   const lineIndices = blocks[bi];
   lineIndices.forEach(li=>{
     const L = lines[li];
-    const div = document.createElement("div");
+    const div = document.createElement('div');
     div.className = 'line';
     L.words.forEach((w, wi)=>{
-      const span = document.createElement("span");
+      const span = document.createElement('span');
       span.className = 'word';
       span.id = `w_${li}_${wi}`;
       span.textContent = w.text + (wi < L.words.length-1?' ':'');
@@ -217,13 +221,7 @@ function renderBlock(bi){
 }
 
 function highlightLoop(){
-  const t = audio.currentTime - introOffset;
-  if(t < 0){
-    lineBox.innerHTML = '';
-    rafId = requestAnimationFrame(highlightLoop);
-    return;
-  }
-
+  const t = audio.currentTime;
   const lineIndices = blocks[currentBlockIndex];
   let done = true;
 
@@ -233,6 +231,7 @@ function highlightLoop(){
       const w = L.words[wi];
       const span = document.getElementById(`w_${li}_${wi}`);
       if(!span) continue;
+
       if(t >= w.start && t <= w.end){
         span.classList.add('highlight');
         done = false;
@@ -260,7 +259,6 @@ function highlightLoop(){
   rafId = requestAnimationFrame(highlightLoop);
 }
 
-// przyciski
 playBtn.addEventListener('click', ()=>{
   if(audio.paused){
     audio.play();
@@ -286,7 +284,7 @@ backBtn.addEventListener('click', ()=>{
   if(currentBlockIndex > 0){
     currentBlockIndex--;
     const li = blocks[currentBlockIndex][0];
-    audio.currentTime = lines[li].start + introOffset;
+    audio.currentTime = lines[li].start;
     renderBlock(currentBlockIndex);
   } else {
     audio.currentTime = 0;
@@ -295,7 +293,7 @@ backBtn.addEventListener('click', ()=>{
 });
 
 audio.addEventListener('seeked', ()=>{
-  const t = audio.currentTime - introOffset;
+  const t = audio.currentTime;
   let found = false;
 
   for(let b=0;b<blocks.length;b++){
@@ -328,7 +326,6 @@ audio.addEventListener('ended', ()=>{
   if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
 });
 
-// inicjalizacja
 (async function init(){
   try{
     rawData = await loadJsonTry(JSON_FILES);
@@ -336,7 +333,6 @@ audio.addEventListener('ended', ()=>{
     buildBlocks();
     renderBlock(0);
     audio.play(); // autostart
-    playBtn.textContent = 'Pause';
     rafId = requestAnimationFrame(highlightLoop);
   } catch(e){
     lineBox.innerHTML = '<div style="color:#ffb3b3">Błąd w JSON</div>';
